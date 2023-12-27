@@ -1,16 +1,11 @@
 # todo_app
 
-A fluter app that lets create and manage to do lists
+A flutter app that lets create and manage to do lists
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+1. Run <code>flutterfire configure</code> in the project root and select a Firebase project
+2. Go to the Firebase Console and enable the Firestore database
+3. Add the following example rules:
+4. Keep rules public
+5. Run the app
