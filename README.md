@@ -15,15 +15,15 @@ A flutter app that lets create and manage to do lists
   <tr>
     <td>
       <p>Notes List</p>
-      <img src="/assets/home.png" alt="Notes List" height="700">
+      <img src="/assets/home.png" alt="Notes List" height="500">
     </td>
     <td>
       <p>Creating new note</p>
-      <img src="/assets/creating_new_note.png" alt="Creating new note" height="700">
+      <img src="/assets/creating_new_note.png" alt="Creating new note" height="500">
     </td>
     <td>
       <p>Updating note</p>
-      <img src="/assets/updating.png" alt="Updating note" height="700">
+      <img src="/assets/updating.png" alt="Updating note" height="500">
     </td>
   </tr>
 </table>
