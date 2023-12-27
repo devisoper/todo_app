@@ -1,6 +1,6 @@
 # To-do app
 
-A flutter app that lets create and manage to do lists
+A flutter app that lets create and manage to do lists, that is the common CRUD.
 
 ## Getting Started
 
