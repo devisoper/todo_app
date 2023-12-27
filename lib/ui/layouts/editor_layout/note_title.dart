@@ -6,9 +6,11 @@ import 'package:flutter/material.dart';
 /// Editor App Bar Title
 class NoteTitle extends StatefulWidget {
   /// Init
-  const NoteTitle({required TextEditingController titleController, super.key})
-      : _titleController = titleController;
+  const NoteTitle({required String initialText, required TextEditingController titleController, super.key})
+      : _initialText = initialText,
+        _titleController = titleController;
 
+  final String _initialText;
   final TextEditingController _titleController;
 
   @override
@@ -19,11 +21,12 @@ class _NoteTitleState extends State<NoteTitle> {
   final _focusNode = FocusNode();
 
   bool _isEditorVisible = false;
-  String _text = 'My note';
+  late String _text = widget._initialText;
 
   @override
   void initState() {
-    widget._titleController.text = _text;
+    widget._titleController.text = widget._initialText;
+
     super.initState();
   }
 
@@ -32,7 +35,7 @@ class _NoteTitleState extends State<NoteTitle> {
         children: [
           if (!_isEditorVisible)
             GestureDetector(
-              onTap: _onTitlePressed,
+              onTap: _editTitle,
               child: Text(_text),
             )
           else
@@ -49,13 +52,13 @@ class _NoteTitleState extends State<NoteTitle> {
                       : TextField(
                           controller: widget._titleController,
                           focusNode: _focusNode,
+                          style: Theme.of(context).textTheme.titleLarge,
                           decoration: const InputDecoration.collapsed(
                             hintText: 'My note',
                           ),
-                          style: Theme.of(context).textTheme.titleLarge,
                         ),
                 ),
-                if (Platform.isAndroid)
+                if (Platform.isIOS)
                   CupertinoButton(
                     onPressed: _saveTitle,
                     child: const Text('Save'),
@@ -70,7 +73,7 @@ class _NoteTitleState extends State<NoteTitle> {
         ],
       );
 
-  void _onTitlePressed() {
+  void _editTitle() {
     setState(() => _isEditorVisible = true);
     _focusNode.requestFocus();
   }

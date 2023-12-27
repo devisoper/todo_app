@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/note.dart';
 
-/// The notes_list.dart widget state
+/// The notes_fetcher.dart widget state
 class NotesState extends ChangeNotifier {
   final _notes = <Note>[];
 
@@ -25,7 +25,7 @@ class NotesState extends ChangeNotifier {
   }
 
   /// Updates a note
-  void updateNote(Note oldNote, Note newNote) {
+  void replaceNote(Note oldNote, Note newNote) {
     final index = _notes.indexOf(oldNote);
     _notes[index] = newNote;
 

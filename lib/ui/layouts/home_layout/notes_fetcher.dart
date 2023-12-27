@@ -4,30 +4,26 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 
+import '../../../app/api/notes_api.dart';
 import '../../../app/models/note.dart';
 import '../../../app/providers/notes_state.dart';
 import '../../../app/router/router.dart';
 import '../../../app/router/routes.dart';
-import '../../../globals.dart';
-
-final _logger = Logger();
 
 /// Loads all notes from Firestore
-class NotesList extends StatefulWidget {
+class NotesFetcher extends StatefulWidget {
   /// Init
-  const NotesList({super.key});
+  const NotesFetcher({super.key});
 
   @override
-  State<NotesList> createState() => _NotesListState();
+  State<NotesFetcher> createState() => _NotesFetcherState();
 }
 
-class _NotesListState extends State<NotesList> {
+class _NotesFetcherState extends State<NotesFetcher> {
   static const _limit = 5;
 
-  final _db = FirebaseFirestore.instance;
   late final _state = Provider.of<NotesState>(context, listen: false);
 
   bool _loading = true;
@@ -37,6 +33,7 @@ class _NotesListState extends State<NotesList> {
   @override
   void initState() {
     super.initState();
+
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetchNotes());
   }
 
@@ -48,26 +45,13 @@ class _NotesListState extends State<NotesList> {
 
     setState(() => _loading = true);
 
-    final ref = _db.collection(notesCollection);
+    final response = await getNotes(_lastDocument, _limit);
 
-    try {
-      var query = ref.orderBy('updated');
-      if (_lastDocument != null) {
-        query = query.startAfterDocument(_lastDocument!);
-      }
-      query = query.limit(_limit);
+    if (response != null) {
+      _state.addNotes(response.$1);
+      _lastDocument = response.$2;
 
-      final response = await query.get();
-
-      final notes = response.docs.map((e) => Note.fromJson(e.data())..id = e.id).toList();
-
-      _allLoaded = notes.length < _limit;
-      _lastDocument = response.docs.lastOrNull;
-
-      _state.addNotes(notes);
-    } on FirebaseException catch (err) {
-      _logger.e('Failed to fetch notes', error: err);
-      showError();
+      _allLoaded = response.$1.length < _limit;
     }
 
     if (mounted) {
@@ -81,7 +65,9 @@ class _NotesListState extends State<NotesList> {
           if (_loading) const LinearProgressIndicator(),
           Column(
             children: [
-              const Expanded(child: _ListNotes()),
+              const Expanded(
+                child: _NotesList(),
+              ),
               if (Platform.isIOS)
                 CupertinoButton(
                   onPressed: _fetchNotes,
@@ -98,16 +84,14 @@ class _NotesListState extends State<NotesList> {
       );
 }
 
-class _ListNotes extends StatefulWidget {
-  const _ListNotes();
+class _NotesList extends StatefulWidget {
+  const _NotesList();
 
   @override
-  State<_ListNotes> createState() => _ListNotesState();
+  State<_NotesList> createState() => _NotesListState();
 }
 
-class _ListNotesState extends State<_ListNotes> {
-  final _db = FirebaseFirestore.instance;
-
+class _NotesListState extends State<_NotesList> {
   Note? _updatingNote;
 
   @override
@@ -125,7 +109,7 @@ class _ListNotesState extends State<_ListNotes> {
               final note = state.notes[index];
 
               return Dismissible(
-                key: Key(note.id),
+                key: Key(note.id!),
                 confirmDismiss: (_) async => _deleteNote(state, note),
                 background: Container(
                   color: Theme.of(context).colorScheme.errorContainer,
@@ -150,38 +134,27 @@ class _ListNotesState extends State<_ListNotes> {
         },
       );
 
-  Future<bool> _deleteNote(NotesState state, Note note) async {
-    final ref = _db.collection(notesCollection).doc(note.id);
-
-    try {
-      await ref.delete();
-      state.deleteNote(note);
-      return true;
-    } on FirebaseException catch (err) {
-      _logger.e('Failed to fetch notes', error: err);
-      showError();
-    }
-
-    return false;
-  }
-
   Future<void> _updateNote(NotesState state, Note oldNote) async {
-    final updatedNote = await router.pushNamed<Note?>(routeEditorLayout, extra: oldNote);
+    final newNote = await router.pushNamed<Note?>(routeEditorLayout, extra: oldNote);
 
-    if (updatedNote != null && oldNote.isDifferentFrom(updatedNote)) {
+    if (newNote != null && oldNote.isDifferentFrom(newNote)) {
       setState(() => _updatingNote = oldNote);
 
-      final ref = _db.collection(notesCollection).doc(oldNote.id);
-
-      try {
-        await ref.update(updatedNote.toJson()..putIfAbsent('updated', FieldValue.serverTimestamp));
-        state.updateNote(oldNote, updatedNote..id = oldNote.id);
-      } on FirebaseException catch (err) {
-        _logger.e('Failed to fetch notes', error: err);
-        showError();
+      if (await updateNote(oldNote, newNote)) {
+        state.replaceNote(oldNote, newNote.copyWithID(oldNote.id!));
       }
 
-      setState(() => _updatingNote = null);
+      if (mounted) {
+        setState(() => _updatingNote = null);
+      }
     }
+  }
+
+  Future<bool> _deleteNote(NotesState state, Note note) async {
+    if (await deleteNote(note)) {
+      state.deleteNote(note);
+      return true;
+    }
+    return false;
   }
 }

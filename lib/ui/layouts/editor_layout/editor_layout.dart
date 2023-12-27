@@ -1,15 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:logger/logger.dart';
 import 'package:string_extensions/string_extensions.dart';
 
 import '../../../app/models/note.dart';
-import '../../../globals.dart';
 import 'note_description.dart';
 import 'note_title.dart';
-
-final _logger = Logger();
 
 /// Editor/Viewer of note
 class EditorLayout extends StatefulWidget {
@@ -25,70 +20,54 @@ class EditorLayout extends StatefulWidget {
 }
 
 class _EditorLayoutState extends State<EditorLayout> {
-  final _db = FirebaseFirestore.instance;
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  late bool _loading = widget._note != null;
 
   @override
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget._note != null) {
-        _fetchDetails();
-      }
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadDetails());
   }
 
-  Future<void> _fetchDetails() async {
-    final ref = _db.collection(notesCollection).doc(widget._note!.id);
-
-    try {
-      final shot = await ref.get();
-      final note = Note.fromJson(shot.data()!);
-
-      _titleController.text = note.title;
-      _descriptionController.text = note.description;
-    } on FirebaseException catch (err) {
-      _logger.e('Failed to fetch notes', error: err);
-      showError();
-    }
-
-    if (mounted) {
-      setState(() => _loading = false);
+  Future<void> _loadDetails() async {
+    if (widget._note != null) {
+      _titleController.text = widget._note!.title;
+      _descriptionController.text = widget._note!.description;
     }
   }
 
   @override
-  Widget build(BuildContext context) => _loading
-      ? Scaffold(appBar: AppBar())
-      : Scaffold(
-          appBar: AppBar(
-            title: NoteTitle(titleController: _titleController),
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          title: NoteTitle(
+            initialText: widget._note?.title ?? 'My note',
+            titleController: _titleController,
           ),
-          body: WillPopScope(
-            onWillPop: _saveNote,
-            child: SafeArea(
-              child: SizedBox(
-                width: double.maxFinite,
-                height: double.maxFinite,
-                child: NoteDescription(descriptionController: _descriptionController),
-              ),
+        ),
+        body: WillPopScope(
+          onWillPop: _popNote,
+          child: SafeArea(
+            child: SizedBox(
+              width: double.maxFinite,
+              height: double.maxFinite,
+              child: NoteDescription(descriptionController: _descriptionController),
             ),
           ),
-        );
+        ),
+      );
 
-  Future<bool> _saveNote() async {
+  Future<bool> _popNote() async {
     if (_descriptionController.text.isNotBlank) {
       final note = Note(
+        id: null,
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
       );
 
       Navigator.pop(context, note);
     } else {
-      Fluttertoast.showToast(msg: 'Empty note discarded');
+      Fluttertoast.showToast(msg: 'Discarded empty note');
     }
 
     return true;
