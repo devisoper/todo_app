@@ -11,6 +11,8 @@ A flutter app that lets create and manage to do lists
 
 # Screenshots
 
-![Alt text](/assets/home.png?raw=true "Home")
+![Alt text](?raw=true "Home")
 ![Alt text](/assets/updating.png?raw=true "Updating note")
 ![Alt text](/assets/creating_new_note.png?raw=true "Creating new note")
+
+<img src="/assets/home.png" height="500" />
